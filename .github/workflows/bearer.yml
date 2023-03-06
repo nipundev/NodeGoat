@@ -1,0 +1,28 @@
+name: Bearer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  policy_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Report
+        id: report
+        uses: bearer/bearer-action@main
+      - id: summary
+        name: Display Summary
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // github does not support multiline outputs so report is encoded
+            const report = decodeURIComponent(`${{ steps.report.outputs.rule_breaches }}`);
+            const passed = `${{ steps.report.outputs.exit_code }}` == "0";
+            if(!passed){ core.setFailed(report); }
