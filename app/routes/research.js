@@ -3,14 +3,22 @@ const needle = require("needle");
 const {
     environmentalScripts
 } = require("../../config/config");
+const { Configuration, OpenAIApi } = require("openai")
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+})
+const openai = new OpenAIApi(configuration)
 
 function ResearchHandler(db) {
     "use strict";
 
     const researchDAO = new ResearchDAO(db);
 
-    this.displayResearch = (req, res) => {
-
+    this.displayResearch = async (req, res) => {
+        const completion = await openai.createCompletion({
+            model: "text-davinci-003",
+            prompt: `find stocks ${req.user.email} might enjoy like ${req.query.symbol}`,
+          })
         if (req.query.symbol) {
             const url = req.query.url + req.query.symbol;
             return needle.get(url, (error, newResponse, body) => {
@@ -24,6 +32,7 @@ function ResearchHandler(db) {
                 if (body) {
                     res.write(body);
                 }
+                res.write("You might also want to check out "+completion.data.choices[0].text)
                 return res.end();
             });
         }
